@@ -1,5 +1,5 @@
-const vapidPublicKey = '【填入你的公钥】';
-const serverUrl = 'https://your-server.com'; // 填你的推送服务地址
+const vapidPublicKey = 'BNd92E5UHgWM9FzmzSo7FjpfTdo5yeQLpyCekBjS2Ias4jCTKwYlyRh8n02_U6gWpG5w8cWkHuxV_pPo7tLy_v0';
+const serverUrl = 'http://118.25.130.9:3000/'; // 填你的推送服务地址
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
