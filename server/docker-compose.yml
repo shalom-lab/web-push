@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  web-push-server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-push-server
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Shanghai
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./subscriptions.json:/app/subscriptions.json
+      - ./push-logs.json:/app/push-logs.json
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - web-push-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+networks:
+  web-push-network:
+    driver: bridge 

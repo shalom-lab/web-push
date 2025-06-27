@@ -1,0 +1,84 @@
+name: Daily Push Notification
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # 每天 UTC+0 9AM 执行一次
+  workflow_dispatch: # 允许手动触发
+    inputs:
+      title:
+        description: '通知标题'
+        required: false
+        default: '🎉 构建完成'
+      body:
+        description: '通知内容'
+        required: false
+        default: 'GitHub Actions 已运行！'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查时间
+        run: |
+          echo "当前时间: $(date)"
+          echo "时区: $(date +%Z)"
+          echo "UTC时间: $(date -u)"
+      
+      - name: 发送推送通知
+        env:
+          SERVER_URL: ${{ secrets.PUSH_SERVER_URL }}
+          API_KEY: ${{ secrets.PUSH_API_KEY }}
+        run: |
+          # 获取通知内容
+          TITLE="${{ github.event.inputs.title || '🎉 构建完成' }}"
+          BODY="${{ github.event.inputs.body || 'GitHub Actions 已运行！' }}"
+          
+          # 构建通知数据
+          NOTIFICATION_DATA=$(cat <<EOF
+          {
+            "title": "$TITLE",
+            "body": "$BODY",
+            "data": {
+              "repository": "${{ github.repository }}",
+              "workflow": "${{ github.workflow }}",
+              "run_id": "${{ github.run_id }}",
+              "timestamp": "$(date -u -Iseconds)"
+            }
+          }
+          EOF
+          )
+          
+          echo "发送通知: $NOTIFICATION_DATA"
+          
+          # 发送通知
+          if [ -n "$SERVER_URL" ]; then
+            RESPONSE=$(curl -s -w "\n%{http_code}" \
+              -X POST "$SERVER_URL/notify" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $API_KEY" \
+              -d "$NOTIFICATION_DATA")
+            
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+            
+            echo "响应状态码: $HTTP_CODE"
+            echo "响应内容: $RESPONSE_BODY"
+            
+            if [ "$HTTP_CODE" -eq 200 ]; then
+              echo "✅ 通知发送成功"
+            else
+              echo "❌ 通知发送失败，状态码: $HTTP_CODE"
+              exit 1
+            fi
+          else
+            echo "⚠️ 未配置推送服务器地址，跳过通知发送"
+          fi
+      
+      - name: 记录执行日志
+        run: |
+          echo "## 通知发送日志" >> $GITHUB_STEP_SUMMARY
+          echo "- 时间: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- 仓库: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 工作流: ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 运行ID: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 触发方式: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY 
