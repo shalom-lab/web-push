@@ -15,20 +15,20 @@ self.addEventListener('push', event => {
   let data = {
     title: '新通知',
     body: '您有一条新消息',
-    icon: '/icon.png',
-    badge: '/badge.png',
+    icon: 'images/icon.png',
+    badge: 'images/badge.png',
     tag: 'default',
     requireInteraction: false,
     actions: [
       {
         action: 'open',
         title: '查看',
-        icon: '/action-open.png'
+        icon: 'images/action-open.png'
       },
       {
         action: 'close',
         title: '关闭',
-        icon: '/action-close.png'
+        icon: 'images/action-close.png'
       }
     ]
   };
